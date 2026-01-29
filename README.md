@@ -1,45 +1,139 @@
-# Data Generation using Modelling and Simulation for Machine Learning
+# Learning an Unknown Probability Density Function using GAN
 
-## Student Information
-**Roll Number:** 102303950
+## 1. Objective
 
-## Objective
-The objective of this assignment is to generate a dataset using a simulation-based approach and then apply different machine learning models to analyze the generated data. Instead of using any real-world dataset, a simulation model is used to create synthetic data. This helps in understanding how modelling and simulation can be used when real data is not easily available or is expensive to collect.
+The objective of this assignment is to learn an **unknown probability density function (PDF)** of a transformed random variable using **only sample data**, without assuming any parametric form of the distribution.
 
-## Simulation Tool Used
-In this assignment, the simulation tool used is **SimPy**, which is a Python-based discrete-event simulation library. SimPy is commonly used to model systems such as queues, servers, networks, and manufacturing processes. It allows us to simulate real-world processes using events and resources.
+A **Generative Adversarial Network (GAN)** is employed to implicitly model the probability distribution of the transformed variable.
 
-## Simulation Model Description
-A single-server queue system (M/M/1 queue) is modeled using SimPy. In this system, customers arrive randomly at the server, wait in a queue if the server is busy, receive service, and then leave the system. Both the arrival time and service time follow an exponential distribution. The main output of interest from this simulation is the average waiting time of customers in the queue.
+---
 
-## Simulation Parameters and Bounds
-The simulation uses two main parameters. The arrival rate represents how frequently customers arrive at the system and is varied between 1 and 10. The service rate represents how quickly the server can serve customers and is varied between 5 and 15. The simulation time is fixed at 100 units for each run. These bounds were chosen to represent realistic system behavior.
+## 2. Dataset Description
 
-## Data Generation Methodology
-Random values for arrival rate and service rate are generated within the specified bounds. These values are passed to the simulation model, which runs for a fixed duration and records the average waiting time of customers. This process is repeated 1000 times, and each simulation run produces one data record. The final dataset consists of the roll number, arrival rate, service rate, and average waiting time. No external dataset is used, as the entire dataset is generated through simulation.
+- **Dataset:** India Air Quality Dataset  
+- **Feature Selected:** NO₂ (Nitrogen Dioxide) concentration  
+- **Data Type:** Real-valued air pollution measurements  
+- **Preprocessing Steps:**
+  - Missing values are removed
+  - Only the **NO₂ column** is used as input, as specified in the assignment
 
-## Machine Learning Approach
-The generated dataset is used to train machine learning models. This is treated as a regression problem, where the input features are arrival rate and service rate, and the target variable is the average waiting time. The dataset is split into training and testing sets using an 80:20 ratio.
+---
 
-## Machine Learning Models Used
-Five different machine learning models are used for comparison:
-- Linear Regression  
-- Decision Tree Regressor  
-- Random Forest Regressor  
-- Support Vector Regressor  
-- K-Nearest Neighbors  
+## 3. Data Transformation
 
-## Evaluation Metrics
-The models are evaluated using **Mean Squared Error (MSE)** and **R² Score**. Mean Squared Error measures the average squared difference between predicted and actual values, while R² Score measures how well the model explains the variance in the data.
+Each NO₂ concentration value \( x \) is transformed using the nonlinear transformation:
 
-## Result Table Explanation
-The result comparison table displays the performance of all machine learning models using MSE and R² score. Linear Regression performs relatively poorly because the relationship between parameters and waiting time is non-linear. Tree-based models perform better, and among them, Random Forest achieves the best performance due to its ensemble learning capability.
+\[
+z = x + a_r \sin(b_r x)
+\]
 
-## Result Graph Explanation
-A bar graph is plotted with machine learning models on the x-axis and R² scores on the y-axis. This graph visually compares the performance of all models. The graph clearly shows that Random Forest has the highest R² score, indicating superior predictive performance compared to other models.
+### Transformation Parameters
 
-## Best Model Identified
-Based on the evaluation results, the **Random Forest Regressor** is identified as the best-performing model. It achieves the highest R² score and the lowest prediction error among all the models considered in this assignment.
+- **University Roll Number:** \( r = 102303694 \)
+- \( a_r = 0.5 \times (r \bmod 7) = 1.5 \)
+- \( b_r = 0.3 \times ((r \bmod 5) + 1) = 1.5 \)
 
-## Conclusion
-This assignment demonstrates how modelling and simulation can be effectively used to generate synthetic data for machine learning applications. The simulation-based dataset successfully captures system behavior, and machine learning models are able to learn meaningful patterns from it. The results show that ensemble models such as Random Forest perform best on simulation-generated data. This approach is especially useful in situations where real-world data is unavailable or difficult to obtain.
+After transformation, the variable \( z \) is **standardized** to ensure stable GAN training.
+
+---
+
+## 4. Methodology
+
+### 4.1 GAN Overview
+
+A Generative Adversarial Network consists of two neural networks:
+
+- **Generator (G):** Generates fake samples resembling real data  
+- **Discriminator (D):** Distinguishes between real and fake samples  
+
+Both networks are trained simultaneously in an adversarial manner.
+
+---
+
+### 4.2 Generator Architecture
+
+- **Input:** Noise sampled from standard normal distribution \( \mathcal{N}(0,1) \)
+- **Layers:**
+  - Dense (32) + LeakyReLU
+  - Dense (32) + LeakyReLU
+  - Dense (1)
+- **Output:** Generated samples \( z_f \)
+
+---
+
+### 4.3 Discriminator Architecture
+
+- **Input:** Real or generated \( z \) values
+- **Layers:**
+  - Dense (16) + LeakyReLU
+  - Dense (16) + LeakyReLU
+  - Dense (1) with Sigmoid activation
+- **Output:** Probability of the input being real
+
+---
+
+### 4.4 Training Details
+
+| Parameter        | Value |
+|------------------|-------|
+| Optimizer        | Adam |
+| Learning Rate    | 0.0002 |
+| Batch Size       | 64 |
+| Epochs           | 3000 |
+| Loss Function    | Binary Cross Entropy |
+
+- The discriminator is trained to classify real and fake samples correctly.
+- The generator is trained to fool the discriminator.
+
+---
+
+## 5. Result Generation
+
+After training the GAN:
+
+- A large number of samples are generated using the trained generator.
+- The probability density function is estimated using:
+  - **Histogram Density Estimation**
+  - **Kernel Density Estimation (KDE)**
+
+---
+
+## 6. Results
+
+### 6.1 Result Summary
+
+| Method | Description |
+|------|------------|
+| Histogram | Approximate distribution of generated samples |
+| KDE | Smooth estimation of the learned PDF |
+| GAN Samples | Closely resemble real transformed data |
+
+---
+
+### 6.2 Result Visualizations
+
+**(a) Histogram of GAN Generated Samples**  
+Displays the frequency distribution of generated \( z \) values and confirms realistic sample generation.
+
+**(b) KDE Plot of Generated Samples**  
+Shows a smooth probability density curve capturing major modes of the distribution.
+
+**(c) Comparison of Real vs GAN PDF**  
+KDE of real transformed data vs KDE of GAN-generated data shows strong overlap, indicating successful learning.
+
+---
+
+## 7. Observations
+
+- The GAN effectively learns the underlying distribution without assuming any parametric form.
+- Mode coverage is satisfactory with minimal mode collapse.
+- Training initially shows instability but stabilizes after sufficient epochs.
+- KDE provides better visualization compared to histogram-based estimation.
+
+---
+
+## 8. Conclusion
+
+This assignment demonstrates that a **Generative Adversarial Network** can successfully learn an **unknown probability density function** using only data samples.
+
+The generated samples closely match the real data distribution, validating the effectiveness of GANs for **non-parametric density estimation**.
